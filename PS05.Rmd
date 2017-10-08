@@ -31,9 +31,7 @@ sample_submission <- read_csv("data/sampleSubmission.csv")
 ```
 
 
-# Collaboration
-
-Please indicate who you collaborated with on this assignment:
+# Notes
 
 For lm model fitting using dplyr: https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html
 
@@ -47,7 +45,16 @@ train <- train %>% mutate(SysTime = as.numeric(unclass(datetime)))
 test <- test %>% mutate(SysTime = as.numeric(unclass(datetime)))
 #Making a corrlation plot of the variables, excluding registered and casual
 #since count is the sum of registered and casual
+```
 
+Let's look at our dependent variable: count, the total count of bikes rented during each hour.
+
+```{r, echo = FALSE}
+ggplot(data = train) +
+  geom_histogram(aes(count))
+```
+
+```{r}
 #Note: Since count is our outcome variable, we are interested in variables that have
 #a high correlation with count
 corPlotData <- train %>% select(season, holiday, workingday, weather, temp, atemp, humidity, windspeed,count, SysTime) %>% cor()
@@ -61,7 +68,7 @@ From the correlation plot, temperature, dateTime (SysTime in the plot), and humi
 
 Fitting the model to the training data, we can that each chosen predictor has a significant p-value.
 ```{r}
-model <- train %>% do(fit = lm(count~ SysTime + temp + humidity, .))
+model <- train %>% do(fit = lm(count ~ SysTime + temp + humidity, .))
 model %>% tidy(fit)
 ```
 
