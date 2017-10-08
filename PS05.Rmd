@@ -21,6 +21,8 @@ set.seed(76)
 
 # Load packages
 library(tidyverse)
+library(corrplot)
+library(broom)
 
 # Note the relative file path, and not absolute file path:
 train <- read_csv("data/train.csv")
@@ -33,25 +35,44 @@ sample_submission <- read_csv("data/sampleSubmission.csv")
 
 Please indicate who you collaborated with on this assignment:
 
+For lm model fitting using dplyr: https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html
 
 # Exploratory Data Analysis
 
 Information on the competition can be found [here](https://www.kaggle.com/c/bike-sharing-demand).
 
 ```{r}
+#Storing a version of time in system time 
+train <- train %>% mutate(SysTime = as.numeric(unclass(datetime)))
+test <- test %>% mutate(SysTime = as.numeric(unclass(datetime)))
+#Making a corrlation plot of the variables, excluding registered and casual
+#since count is the sum of registered and casual
+
+#Note: Since count is our outcome variable, we are interested in variables that have
+#a high correlation with count
+corPlotData <- train %>% select(season, holiday, workingday, weather, temp, atemp, humidity, windspeed,count, SysTime) %>% cor()
+corrplot(corPlotData, order = "hclust")
 
 ```
 
+From the correlation plot, temperature, dateTime (SysTime in the plot), and humidity have the strongest relationship with bike rentals.
 
 # Model Fit
 
+Fitting the model to the training data, we can that each chosen predictor has a significant p-value.
 ```{r}
-
+model <- train %>% do(fit = lm(count~ SysTime + temp + humidity, .))
+model %>% tidy(fit)
 ```
 
 
 # Create Submission File
 
+Here, we've added a second layer to our model. If the model predicts bike rental numbers less than 0, we've set the estimate to 0.
 ```{r}
+fit <- train %>% do(augment(lm(count~SysTime + temp + humidity,data= .),newdata = test))
+fit$.fitted[fit$.fitted < 0] <- 0
+dfToSubmit <- fit %>% mutate(count = .fitted) %>% select(datetime, count)
 
+write.csv(dfToSubmit, file = "submission.csv", row.names = FALSE)
 ```
