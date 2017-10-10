@@ -73,14 +73,12 @@ corrplot(corPlotData, order = "hclust")
 
 ```
 
-From the correlation plot, `temperature`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
+From the correlation plot, `atemp`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
 
-# Model Fit
-
-Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `temperature`, `dateTime`, and `humidity`.
+Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `atemp`, `dateTime`, and `humidity`.
 
 ```{r}
-model <- lm(log_count ~ SysTime + temp + humidity, data = train)
+model <- lm(log_count ~ SysTime + atemp + humidity, data = train)
 summary(model)$coefficients %>% knitr::kable(digits = 3)
 ```
 
@@ -89,7 +87,7 @@ summary(model)$coefficients %>% knitr::kable(digits = 3)
 We now use our model to make predictions for the test set, taking the exponential of `log_count` to transform back to the original units of `count`.
 
 ```{r}
-fit <- train %>% do(augment(lm(log_count ~ SysTime + temp + humidity, data = .), newdata = test))
+fit <- train %>% do(augment(lm(log_count ~ SysTime + atemp + humidity, data = .), newdata = test))
 dfToSubmit <- fit %>% mutate(count = round(exp(.fitted), 0)) %>% select(datetime, count)
 
 write.csv(dfToSubmit, file = "submission.csv", row.names = FALSE)
@@ -103,4 +101,4 @@ ggplot(data = dfToSubmit) +
   labs(main = "Distribution of predicted values", x = "num_bikes")
 ```
 
-In the end, our model yielded a Kaggle score of 1.20257. 
+In the end, our model yielded a Kaggle score of 1.20101. 
