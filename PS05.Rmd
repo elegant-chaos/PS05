@@ -33,7 +33,7 @@ sample_submission <- read_csv("data/sampleSubmission.csv")
 
 # Notes
 
-In one version of this assignment, we fit a linear model using dplyr. For more information on that, see [this](https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html).
+We fit a linear model using dplyr, which we learned about [here](https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html).
 
 # Exploratory Data Analysis
 
@@ -53,7 +53,7 @@ ggplot(data = train) +
   labs(x = "num_bikes")
 ```
 
-Looks like the distribution of bikes rented per hour is seriously skewed right. Let's transform our dependent variable by taking the natural log. 
+The histogram shows the distribution of bikes rented per hour has a right skew. We chose to log transform count as a potential fix.
 
 ```{r, echo = FALSE}
 train <- train %>% mutate(log_count = log(count))
@@ -63,7 +63,7 @@ ggplot(data = train) +
   labs(x = "log(num_bikes)")
 ```
 
-This distribution looks a bit closer to normal, although it now appears to be skewed to the left. Still, using the logarithm of count should be better for linear regression.
+The histogram of log(count) shows a distribution that looks a bit closer to normal, although some left skew is still displayed. However, the more normal distribution of log(count) should result in better predictions when using linear regression.
 
 Note: Since the logarithm of count is our outcome variable, we are interested in variables that have a high correlation with the `log_count`. We do not look at `registered` and `casual` because `count` is just the sum of these two variables.
 
@@ -73,11 +73,11 @@ corrplot(corPlotData, order = "hclust")
 
 ```
 
-From the correlation plot, `temperature`, dateTime (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
+From the correlation plot, `temperature`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
 
 # Model Fit
 
-Fitting the model to the training data. We must again note that the dependent variable is the logairthm of count, not the actual count.
+Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `temperature`, `dateTime`, and `humidity`.
 
 ```{r}
 model <- lm(log_count ~ SysTime + temp + humidity, data = train)
@@ -86,7 +86,7 @@ summary(model)$coefficients %>% knitr::kable(digits = 3)
 
 # Create Submission File
 
-We now use our model to make predictions for the test set. We take the exponential of our predicted values for log_count to get back to the original units.
+We now use our model to make predictions for the test set, taking the exponential of `log_count` to transform back to the original units of `count`.
 
 ```{r}
 fit <- train %>% do(augment(lm(log_count ~ SysTime + temp + humidity, data = .), newdata = test))
@@ -102,3 +102,5 @@ ggplot(data = dfToSubmit) +
   geom_histogram(aes(count)) +
   labs(main = "Distribution of predicted values", x = "num_bikes")
 ```
+
+In the end, our model yielded a Kaggle score of 1.20257. 
