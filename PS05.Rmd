@@ -31,6 +31,7 @@ sample_submission <- read_csv("data/sampleSubmission.csv")
 ```
 
 
+
 # Notes
 
 We fit a linear model using dplyr, which we learned about [here](https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html).
@@ -45,13 +46,16 @@ train <- train %>% mutate(SysTime = as.numeric(unclass(datetime)))
 test <- test %>% mutate(SysTime = as.numeric(unclass(datetime)))
 ```
 
+
 Let's look at our dependent variable: count, the total count of bikes rented during each hour.
 
 ```{r, echo = FALSE}
 ggplot(data = train) +
-  geom_histogram(aes(count)) + 
-  labs(x = "num_bikes")
+  geom_histogram(aes(count), color = "lightblue4", bins = 50, fill = "lightblue2") + 
+  labs(x = "Number of Bikes", y = "Frequency (Counts in Hour Increments)",
+       title = "Histogram of Bike Rental Counts")
 ```
+
 
 The histogram shows the distribution of bikes rented per hour has a right skew. We chose to log transform count as a potential fix.
 
@@ -59,9 +63,10 @@ The histogram shows the distribution of bikes rented per hour has a right skew. 
 train <- train %>% mutate(log_count = log(count))
 
 ggplot(data = train) +
-  geom_histogram(aes(log_count)) + 
-  labs(x = "log(num_bikes)")
+  geom_histogram(aes(log_count), color = "lightblue4", bins = 50, fill = "lightblue2") + labs(x = "Number of Bikes (Log Scale)", y = "Frequency (Counts in Hour Increments)",
+       title = "Histogram of Bike Rental Counts on Log Scale")
 ```
+
 
 The histogram of log(count) shows a distribution that looks a bit closer to normal, although some left skew is still displayed. However, the more normal distribution of log(count) should result in better predictions when using linear regression.
 
@@ -73,34 +78,38 @@ corrplot(corPlotData, order = "hclust")
 
 ```
 
-From the correlation plot, `temperature`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
 
-# Model Fit
+From the correlation plot, `atemp`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals.
 
-Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `temperature`, `dateTime`, and `humidity`.
+#Fitting the Model  
+
+Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `atemp`, `dateTime`, and `humidity`.
 
 ```{r}
-model <- lm(log_count ~ SysTime + temp + humidity, data = train)
+model <- lm(log_count ~ SysTime + atemp + humidity, data = train)
 summary(model)$coefficients %>% knitr::kable(digits = 3)
 ```
+
 
 # Create Submission File
 
 We now use our model to make predictions for the test set, taking the exponential of `log_count` to transform back to the original units of `count`.
 
 ```{r}
-fit <- train %>% do(augment(lm(log_count ~ SysTime + temp + humidity, data = .), newdata = test))
+fit <- train %>% do(augment(lm(log_count ~ SysTime + atemp + humidity, data = .), newdata = test))
 dfToSubmit <- fit %>% mutate(count = round(exp(.fitted), 0)) %>% select(datetime, count)
 
 write.csv(dfToSubmit, file = "submission.csv", row.names = FALSE)
 ```
 
+
 Sanity check: let's look at the distribution of our predictions. It looks very similar to the distribution of the training set - skewed right and centered close to 0.
 
 ```{r, echo = FALSE}
 ggplot(data = dfToSubmit) +
-  geom_histogram(aes(count)) +
-  labs(main = "Distribution of predicted values", x = "num_bikes")
+  geom_histogram(aes(count), color = "lightblue4", bins = 50, fill = "lightblue2") +
+  labs(main = "Distribution of predicted values",x = "Number of Predicted Bikes", y = "Frequency (Counts in Hour Increments)")
 ```
 
-In the end, our model yielded a Kaggle score of 1.20257. 
+
+In the end, our model yielded a Kaggle score of 1.20101.
