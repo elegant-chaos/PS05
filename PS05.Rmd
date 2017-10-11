@@ -75,6 +75,7 @@ corrplot(corPlotData, order = "hclust")
 
 From the correlation plot, `atemp`, `dateTime` (`SysTime` in the plot), and `humidity` are the three variables that have the strongest relationship with bike rentals. We will use these three predictors to fit our model.
 
+
 Here, we fit a linear model for `log_count` predicted by the 3 most correlated variables: `atemp`, `dateTime`, and `humidity`.
 
 ```{r}
